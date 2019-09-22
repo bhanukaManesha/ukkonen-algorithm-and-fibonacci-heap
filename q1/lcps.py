@@ -60,6 +60,89 @@
 #     return root
 
 
+# if global_i.i == active_node.end.i:
+#     print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 1")
+#     # Rule 1
+#     # active_node.end += 1
+#     j += 1
+#     active_node = root
+#
+#     # j += 1
+
+
+# def ukkonen(txt):
+#     n = len(txt)
+#
+#     global_i = GlobalI(0)
+#
+#     root = Node(0, 0)
+#
+#     active_length = 0
+#     active_node = root
+#
+#     j = 0
+#     while global_i.i <= n - 1:
+#         global_i.i += 1
+#         # j = 0
+#         while j < global_i.i and global_i.i <= n:
+#
+#             active_node = root
+#
+#             if active_node.links[get_alphanumeric_order(txt[j])] == None:
+#                 print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 2")
+#                 new_node = Node(j,global_i)
+#                 active_node.links[get_alphanumeric_order(txt[j])] = new_node
+#                 j += 1
+#                 break
+#
+#
+#
+#             while j < len(txt) and active_node.links[get_alphanumeric_order(txt[j])] != None :
+#
+#                 if global_i.i <= active_node.links[get_alphanumeric_order(txt[j])].end.i:
+#                     # Rule 3
+#                     if txt[active_length] == txt[active_node.links[get_alphanumeric_order(txt[j])].end.i - 1]:
+#                         print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 3" )
+#                         global_i.i += 1
+#                         active_length += 1
+#                         break
+#
+#                     else:
+#                         print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 2" )
+#
+#
+#                         sep = active_node.links[get_alphanumeric_order(txt[j])].end.i - 1
+#
+#                         active_node.links[get_alphanumeric_order(txt[j])].start = sep
+#
+#
+#                         new_middle_node = Node(sep - 1,sep)
+#                         new_middle_node.links[get_alphanumeric_order(txt[j])] = active_node.links[get_alphanumeric_order(txt[j])]
+#
+#                         new_left_node = Node(global_i.i, global_i)
+#
+#                         new_middle_node.links[get_alphanumeric_order(txt[active_length])] = new_left_node
+#
+#                         active_node.links[get_alphanumeric_order(txt[j])] = new_middle_node
+#
+#
+#                         # suffix link
+#                         active_node = root
+#                         j += 1
+#                         break
+#
+#
+#                 elif global_i.i > active_node.end.i :
+#                     print("Next Node")
+#                     j += 1
+#                     active_node = active_node.links[get_alphanumeric_order(txt[j])]
+#
+#
+#     # global_i.i -= 1
+#     return root
+
+
+
 SIZE_OF_ALPHABET = 63
 
 def get_alphanumeric_order(letter):
@@ -116,17 +199,20 @@ class Node:
     def __init__(self, start, end):
         self.start = start
         self.end = end
-        self.links = [None] * SIZE_OF_ALPHABET
+        self.children = [None] * SIZE_OF_ALPHABET
 
         self.suffix_id = None
-        self.isLeaf = True
+        self.suffix_link = None
 
     def __str__(self):
-        edges = " [ "
-        for i in range(len(self.links)):
-            if self.links[i] != None:
-                edges += get_string(i) + "::" + str(self.links[i]) + " "
-        edges += " ] "
+
+
+        edges = " ["
+        for i in range(len(self.children)):
+            if self.children[i] != None:
+                edges += get_string(i) + "::" + str(self.children[i]) + " "
+        edges += "] "
+
         return str(self.start) + " -> " + str(self.end) + "" + str(edges)
 
 
@@ -138,94 +224,219 @@ class GlobalI():
         return str(self.i)
 
 
-# if global_i.i == active_node.end.i:
-#     print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 1")
-#     # Rule 1
-#     # active_node.end += 1
-#     j += 1
-#     active_node = root
-#
-#     # j += 1
+def ukkonen(text):
 
-
-def ukkonen(txt):
-    n = len(txt)
-
-    global_i = GlobalI(0)
-
-    root = Node(0, 0)
-
-    active_length = 0
-    active_node = root
+    global_i = GlobalI(-1)
 
     j = 0
-    while global_i.i <= n - 1:
+
+    root = Node(0, global_i)
+
+    active_node = root
+    active_length = 0
+    active_edge = -1
+
+    while global_i.i < len(text) - 1:
+
+        # Reseting the last created node
+        last_created_node = None
+
+        # Incrementing the global i which will in turn apply rule 1
         global_i.i += 1
-        # j = 0
-        while j < global_i.i and global_i.i <= n:
 
-            active_node = root
+        # Loop until all extensions are done
+        while j <= global_i.i:
 
-            if active_node.links[get_alphanumeric_order(txt[j])] == None:
-                print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 2")
-                new_node = Node(j,global_i)
-                active_node.links[get_alphanumeric_order(txt[j])] = new_node
-                j += 1
-                break
+            # Check if the active length is 0
+            if active_length == 0:
 
+                # Get the child from the active node
+                child = active_node.children[get_alphanumeric_order(text[global_i.i])]
 
+                if child != None:
 
-            while j < len(txt) and active_node.links[get_alphanumeric_order(txt[j])] != None :
+                    print("Rule 3")
 
-                if global_i.i <= active_node.links[get_alphanumeric_order(txt[j])].end.i:
-                    # Rule 3
-                    if txt[active_length] == txt[active_node.links[get_alphanumeric_order(txt[j])].end.i - 1]:
-                        print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 3" )
-                        global_i.i += 1
-                        active_length += 1
-                        break
+                    active_edge = child.start
+
+                    active_length+=1
+
+                    break
+
+                else:
+
+                    print("Rule 2")
+
+                    # Create the new node
+                    active_node.children[get_alphanumeric_order(text[global_i.i])] = Node(global_i.i, global_i)
+
+                    # Increase j by 1
+                    j += 1
+
+            else:
+
+                next_char = skip_count(global_i.i,
+                                       text,
+                                       active_length,
+                                       active_node,
+                                       active_edge
+                                       )
+
+                if next_char == -1 :
+
+                    print("Rule 2")
+
+                    node = active_node.children[get_alphanumeric_order(text[active_edge])]
+
+                    node.children[get_alphanumeric_order(text[global_i.i])] = Node(global_i.i, global_i)
+
+                    if last_created_node != None:
+                        last_created_node.suffix_link = node
+
+                    last_created_node = node
+
+                    if active_node != root:
+                        active_node = active_node.suffix_link
 
                     else:
-                        print("i: " + str(global_i.i) + " j:" + str(j) + " c:" + str(j) + "  Rule 2" )
+                        active_edge = active_edge + 1
+                        active_length -= 1
 
-
-                        sep = active_node.links[get_alphanumeric_order(txt[j])].end.i - 1
-
-                        active_node.links[get_alphanumeric_order(txt[j])].start = sep
-
-
-                        new_middle_node = Node(sep - 1,sep)
-                        new_middle_node.links[get_alphanumeric_order(txt[j])] = active_node.links[get_alphanumeric_order(txt[j])]
-
-                        new_left_node = Node(global_i.i, global_i)
-
-                        new_middle_node.links[get_alphanumeric_order(txt[active_length])] = new_left_node
-
-                        active_node.links[get_alphanumeric_order(txt[j])] = new_middle_node
-
-
-                        # suffix link
-                        active_node = root
-                        j += 1
-                        break
-
-
-                elif global_i.i > active_node.end.i :
-                    print("Next Node")
                     j += 1
-                    active_node = active_node.links[get_alphanumeric_order(txt[j])]
+
+                    break
+
+                print("Comparing " + next_char + " == " + text[global_i.i])
+                if next_char == text[global_i.i]:
+
+                    print("Rule 3")
+
+                    if last_created_node != None:
+                        last_created_node.suffix_link = active_node.children[get_alphanumeric_order(text[active_edge])]
 
 
-    # global_i.i -= 1
+                    node = active_node.children[get_alphanumeric_order(text[active_edge])]
+
+                    difference = node.end.i - node.start
+
+                    if difference < active_length:
+
+                        active_node = node
+                        active_length = active_length - difference
+                        active_edge = node.children[get_alphanumeric_order(text[global_i.i])].start
+
+                    else:
+
+                        active_length += 1
+
+                    break
+
+                else:
+
+                    print("Rule 2")
+
+                    node = active_node.children[get_alphanumeric_order(text[active_edge])]
+
+                    old_start = node.start
+
+                    node.start = node.start + active_length
+
+                    # Create new middle node
+                    new_middle_node = Node(old_start, GlobalI(old_start + active_length - 1))
+
+#                   # Create new leaf node
+                    new_leaf_node = Node(global_i.i, global_i)
+
+                    new_middle_node.children[get_alphanumeric_order(text[new_middle_node.start + active_length])] = node
+
+                    new_middle_node.children[get_alphanumeric_order(text[global_i.i])] = new_leaf_node
+
+                    # new_middle_node =
+
+                    active_node.children[get_alphanumeric_order(text[new_middle_node.start])] = new_middle_node
+
+                    # Set the new node for suffix link
+                    last_created_node = new_middle_node
+
+                    # Default the suffix link to root
+                    new_middle_node.suffix_link = root
+
+
+                    if active_node != root:
+                        active_node = active_node.suffix_link
+
+                    else:
+                        active_edge = active_edge + 1
+                        active_length -= 1
+
+                    j += 1
+
     return root
 
+def skip_count(i, text, active_length, active_node, active_edge):
 
+    node = active_node.children[get_alphanumeric_order(text[active_edge])]
+
+    difference = node.end.i - node.start
+
+    if difference >= active_length:
+        return text[active_node.children[get_alphanumeric_order(text[active_edge])].start + active_length]
+
+    if difference + 1 == active_length:
+
+        if node.children[get_alphanumeric_order(text[i])] != None:
+
+            return text[i]
+
+
+    else:
+        active_node = node
+        active_length = active_length - difference - 1
+        active_edge = active_edge + difference + 1
+
+        return skip_count(i,
+                          text,
+                          active_length,
+                          active_node,
+                          active_edge
+                          )
+
+
+    return -1
+
+
+# def test_ukkonen(root, text, index, current):
+#
+#     if root == None:
+#         raise Exception()
+#
+#     node = root.children[get_alphanumeric_order(text[current])]
+#
+#     if node == None:
+#         print("failed")
+#
+#     j = 0
+#
+#     for i in range(node.end.i):
+#         if text[current + j] != text[i]:
+#             print("Mistmatch")
+#
 
 
 
 if __name__ == "__main__":
     # print(ukkonens_algorithm("aaaaab"))
 
-    tree = ukkonen("abba$")
+    tree = ukkonen("mississippi$")
     print()
     print(tree)
+
+    # *adeacdade
+    # *abcabxabcd
+    # *abcdefabxybcdmnabcdex
+    # *abcadak
+    # *dedododeodo
+    # *abcabxabcd
+    # *mississippi
+    # *banana
+    # *ooooooooo
