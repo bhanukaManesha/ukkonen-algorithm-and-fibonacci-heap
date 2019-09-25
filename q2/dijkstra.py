@@ -1,255 +1,5 @@
-
-
-
-class FibonacciHeap:
-
-    def __init__(self):
-        self.min = None
-        self.biggest = None
-        self.count = 0
-
-    def __len__(self):
-        return self.count
-
-    def __str__(self):
-        output = ""
-
-        output += self.traverse(self.min)
-
-        output += "\nmin : " + str(self.min)
-        return output
-
-
-    def traverse(self,root):
-        output = ""
-        start = root
-        output += str(start.key) + " "
-        current = start.right
-        while current != start:
-            output += str(current.key) + " [left : " + str(current.left) + " right : " + str(current.right) + "]  "
-
-            if current.child != None:
-                output += self.traverse(current.child)
-            current = current.right
-
-        return output
-
-    def insert(self, key, data):
-        if self.min != None:
-            newNode = Node(key, data, self.min.left, self.min)
-            self.min.left.right = newNode
-            self.min.left = newNode
-
-            if newNode.key < self.min.key:
-                self.min = newNode
-
-            self.count += 1
-            return newNode
-
-        else:
-            self.min = Node(key, data, None, None)
-            self.min.left = self.min
-            self.min.right = self.min
-            self.biggest = self.min
-
-            self.count += 1
-            return self.min
-
-    def get_min(self):
-        return self.min
-
-    def extract_min(self):
-        if self.count == 0:
-            return None
-        elif self.count == 1:
-            minNode = self.min
-            self.biggest = None
-            self.min = None
-            self.count -= 1
-            return (minNode.key, minNode.data)
-        else:
-
-            if self.min.child != None:
-                minNode = self.min
-                self.min.left.right = self.min.child
-
-                self.min.child.left.right = self.min.right
-
-                self.min.right = self.min.child.left
-
-                self.min.child.left = self.min.left
-
-                currentNode = self.min.child
-                currentNode.parent = None
-                currentNode = currentNode.right
-
-                while currentNode != self.min.child and currentNode is not None:
-                    currentNode.parent = None
-                    currentNode = currentNode.right
-
-
-                self.min = minNode.right
-
-                # Biggest??
-                if self.biggest == minNode:
-                    self.biggest = minNode.left
-
-            else:
-                minNode = self.min
-                self.min.left.right = self.min.right
-                self.min.right.left = self.min.left
-                self.min = self.min.left
-
-            self.count -= 1
-
-            if self.count > 1:
-                self.consolidate()
-
-            return (minNode.key, minNode.data)
-
-    def consolidate(self):
-
-        A = [None] * (self.biggest.degree + 1)
-
-        start = self.min
-        A[start.degree] = start
-        current = start.right
-
-        while True:
-            temp_start = start
-            while temp_start.parent != None:
-                temp_start = temp_start.parent
-
-
-            # print(self)
-            # Update the minimum
-            if current.key < self.min.key:
-                self.min = current
-
-            if current.degree > len(A) - 1:
-                A.append(None)
-
-
-            if A[current.degree] != None:
-                otherNode = A[current.degree]
-                A[current.degree] = None
-                current = self.merge(current, otherNode)
-
-            else:
-                A[current.degree] = current
-                if current.right == temp_start:
-                    break
-                current = current.right
-
-
-
-    def merge(self, nodeA, nodeB):
-        if nodeB.key < nodeA.key:
-            nodeA.parent = nodeB
-            nodeA.right.left = nodeB
-            nodeB.right = nodeA.right
-
-
-            if nodeB.child != None:
-
-                nodeB.child.left.right = nodeA
-                nodeA.left = nodeB.child.left
-
-                nodeB.child.left = nodeA
-                nodeA.right = nodeB.child
-
-            else:
-                nodeB.child = nodeA
-                nodeA.left = nodeA
-                nodeA.right.left = nodeB
-                nodeA.right = nodeA
-
-            nodeB.degree += 1
-            return nodeB
-
-        else:
-            nodeB.parent = nodeA
-            nodeA.right.left = nodeA
-            nodeA.right = nodeB.right
-
-            if nodeA.child != None:
-                nodeA.child.left.right = nodeB
-                nodeB.left = nodeA.child.left
-
-                nodeA.child.left = nodeB
-                nodeB.right = nodeA.child
-                nodeB.right.left = nodeA
-            else:
-                nodeA.child = nodeB
-                nodeB.left = nodeB
-                nodeB.right.left = nodeA
-                nodeB.right = nodeB
-
-            nodeA.degree += 1
-            return nodeA
-
-    def decrease_key(self, nodeA, value):
-        if nodeA.parent != None and nodeA.parent.key <= value:
-            nodeA.key = value
-        elif nodeA.parent != None:
-            nodeA.key = value
-
-            currentNode = nodeA
-
-            # Case 2a
-            parent_mark = currentNode.parent.mark
-            self.promote_to_root(currentNode)
-
-            if nodeA.key < self.min.key:
-                self.min = nodeA
-
-            # Case 2b
-            while parent_mark == True:
-                currentNode = currentNode.parent
-                parent_mark = currentNode.parent.mark
-                self.promote_to_root(currentNode)
-
-
-    def promote_to_root(self, node):
-
-        if node.parent.parent != None:
-            node.parent.mark = True
-
-        if node.parent.child == node:
-            if node.left == node:
-                node.parent.child == None
-            else:
-                node.parent.child = node.left
-
-        node.parent = None
-
-        node.left = node.right
-        node.right = node.left
-
-        self.min.left.right = node
-        node.left = self.min.left
-        self.min.left = node
-        node.right = self.min
-
-        node.mark = False
-
-
-class Node:
-    def __init__(self, key, data, left, right):
-        self.parent = None
-        self.left = left
-        self.right = right
-        self.child = None
-
-        self.key = key
-        self.data = data
-
-        self.degree = 0
-        self.mark = False
-
-    def __str__(self):
-        return str(self.key) + ":" + str(self.data)
-
+import argparse as ap
+import math
 
 class Graph:
     """
@@ -312,6 +62,8 @@ class Vertex:
         """
         self.id = id
         self.edges = []
+
+        self.visited = -2
 
     def add_edge(self,e):
         """
@@ -390,6 +142,424 @@ def get_edges(filename):
     # Return the graph
     return graph
 
+
+class FibonacciHeap:
+
+    def __init__(self, number_of_nodes):
+        self.min = None
+        self.count = 0
+
+        self.look_up = [-2] * (number_of_nodes + 1)
+
+    def __len__(self):
+        return self.count
+
+    def __str__(self):
+        output = ""
+
+        # output += self.traverse(self.min)
+
+        # output += "min : " + str(self.min)
+        return self.print_root()
+
+
+    def traverse(self,root):
+        output = ""
+        start = root
+        output += str(start.priority) + " "
+        current = start.right
+        while current != start:
+            output += str(current.priority) + " [left : " + str(current.left) + " right : " + str(current.right) + "]  "
+
+            if current.child != None:
+                output += self.traverse(current.child)
+            current = current.right
+
+        return output
+
+
+    def print_root(self):
+
+        if self.min != None:
+            output = ""
+            current = self.min
+
+            output += str(current)
+
+            if current.right != current:
+                current = current.right
+                while current != self.min:
+                    output += "\n " + str(current)
+                    current = current.right
+
+            return output
+
+        return ""
+
+    def count_node(self):
+        if self.min != None:
+            count_node = 0
+            current = self.min
+
+            count_node += current.count_all_children()
+
+            if current.right != current:
+                current = current.right
+                while current != self.min:
+                    count_node += current.count_all_children()
+                    current = current.right
+
+            return count_node
+
+        return 0
+
+
+    def insert(self, id, priority, data):
+
+        new_node = Node(priority, data, None, None)
+        new_node.left = new_node
+        new_node.right = new_node
+
+
+        if self.min == None:
+            self.min = new_node
+        else:
+
+            new_node.left = self.min.left
+            self.min.left.right = new_node
+            self.min.left = new_node
+            new_node.right = self.min
+
+            if new_node.priority < self.min.priority:
+                self.min = new_node
+
+        # self.min = self.add_to_circular_list(self.min, new_node)
+
+        self.count += 1
+
+        # print("Added one" + str(self.count))
+
+        self.look_up[id] = new_node
+
+    def get_min(self):
+        return self.min
+
+    def remove_from_list(self, node):
+
+        if node.right != node and node.child == None:
+            left_sibling = node.left
+            right_sibling = node.right
+
+            left_sibling.right = right_sibling
+            right_sibling.left = left_sibling
+
+        return
+
+    def extract_min(self):
+        # Get reference to the minimum node
+        minNode = self.min
+
+        if self.min != None:
+
+            self.remove_parent(minNode.child)
+
+
+            # if self.min.priority == 1524:
+            #     print("")
+
+            if self.min.right != self.min and self.min.child != None:
+                parent_sibling_left = self.min.left
+
+                child_sibling_left = self.min.child.left
+
+                parent_sibling_left.right = self.min.child
+                self.min.child.left = parent_sibling_left
+
+                self.min.child = None
+
+                child_sibling_left.right = self.min
+                self.min.left = child_sibling_left
+
+                self.min.degree = 0
+
+            elif self.min != None and self.min.child != None:
+                self.min.child.left.right = self.min
+                self.min.left = self.min.child.left
+                self.min.right = self.min.child
+                self.min.child.left = self.min
+                self.min.child = None
+                self.min.degree = 0
+
+
+
+            next_min = self.consolidate()
+
+
+            ff = self.count_node()
+
+            if self.min.right != self.min:
+                left_sibling = self.min.left
+                right_sibling = self.min.right
+
+                left_sibling.right = right_sibling
+                right_sibling.left = left_sibling
+
+            # self.remove_from_circular_link_list(minNode, minNode.child)
+
+            # self.remove_from_list(minNode)
+
+
+            if minNode == minNode.right:
+                if minNode.child != None:
+                    # minNode = minNode.child
+                    self.min = self.min.child
+                else:
+                    self.min = None
+            else:
+                self.min = next_min
+
+
+            # Reduce the count
+            self.count -= 1
+
+        return (minNode.priority, minNode.data)
+
+    def consolidate(self):
+
+        log_value = int((math.log2(self.count))) + 2
+        A = [None] * log_value
+
+        # A[self.min.degree] = self.min
+
+        next_min = self.min
+        if self.min.right != self.min:
+            next_min = self.min.right
+
+
+        if self.min == self.min.right:
+            return
+
+        pointer_node = self.min.right
+
+        while True :
+
+            degree = pointer_node.degree
+
+            while A[degree] != None:
+
+                other_node = A[degree]
+
+                if (pointer_node == other_node):
+
+                    break
+
+                if other_node.priority < pointer_node.priority:
+                    pointer_node = self.merge(pointer_node, other_node)
+                elif other_node.priority > pointer_node.priority:
+                    pointer_node = self.merge(other_node, pointer_node)
+                else:
+                    pointer_node = self.merge(other_node, pointer_node)
+
+                    if next_min == other_node or next_min == pointer_node:
+                        next_min = pointer_node
+
+                A[degree] = None
+                degree += 1
+
+            A[pointer_node.degree] = pointer_node
+
+            if pointer_node.priority < next_min.priority and pointer_node != self.min:
+                next_min = pointer_node
+
+            pointer_node = pointer_node.right
+
+            if pointer_node == self.min:
+                break
+
+            # if pointer_node.priority < next_min.priority and pointer_node != self.min:
+            #     next_min = pointer_node
+
+
+        return next_min
+
+    def remove_parent(self, node):
+        if node != None:
+            # Remove all the links to the removed parent
+            if node != None:
+                current = node
+                while True:
+                    current.parent = None
+                    current = current.right
+
+                    if current == node:
+                        break
+
+        return
+
+    def remove_from_circular_link_list(self, parent, children):
+
+
+        if children == None:
+
+            if parent.right != parent:
+                left_sibling = parent.left
+                right_sibling = parent.right
+
+                left_sibling.right = right_sibling
+                right_sibling.left = left_sibling
+
+            return
+
+        if parent.right != parent:
+            parent_sibling_left = parent.left
+            parent_sibling_right = parent.right
+
+            child_sibling_left = children.left
+
+            parent_sibling_left.right = parent.child
+            parent.child.left = parent_sibling_left
+
+            child_sibling_left.right = parent_sibling_right
+            parent_sibling_right.left = child_sibling_left
+
+            parent.child = None
+
+
+    def merge(self, child, parent):
+
+        if child.right != child:
+            child.left.right = child.right
+            child.right.left = child.left
+
+            child.left = child
+            child.right = child
+            child.parent = parent
+
+            if parent.child != None:
+                child.left = parent.child
+                child.right = parent.child.right
+                parent.child.right.left = child
+                parent.child.right = child
+
+            else:
+                parent.child = child
+
+            # Increase the degree
+            parent.degree += 1
+            child.mark = False
+
+        return parent
+
+
+    def decrease_key(self, id, value):
+
+        currentNode = self.look_up[id]
+
+        if currentNode.parent != None and currentNode.parent.priority < value:
+            currentNode.priority = value
+            if currentNode.priority < self.min.priority:
+                self.min = currentNode
+        elif currentNode.parent != None:
+            currentNode.priority = value
+
+            # Case 2a
+            parent_mark = currentNode.parent.mark
+
+
+
+            self.promote_to_root(currentNode)
+
+
+
+            if currentNode.priority < self.min.priority:
+                self.min = currentNode
+
+            # Case 2b
+            while parent_mark == True:
+                currentNode = currentNode.parent
+                parent_mark = currentNode.parent.mark
+                self.promote_to_root(currentNode)
+
+        else:
+            currentNode.priority = value
+            if currentNode.priority < self.min.priority:
+                self.min = currentNode
+
+
+
+    def promote_to_root(self, node):
+
+        if node.parent.parent != None:
+            node.parent.mark = True
+
+
+        if node.parent.child == node:
+            if node.left == node:
+                node.parent.child = None
+            else:
+                node.parent.child = node.left
+
+        if node.left != node:
+            node.left.right = node.right
+            node.right.left = node.left
+
+        else:
+            node.left = None
+            node.right = None
+
+        node.parent = None
+
+
+        self.min.left.right = node
+        node.left = self.min.left
+        self.min.left = node
+        node.right = self.min
+
+        node.mark = False
+
+
+class Node:
+    def __init__(self, priority, data, left, right):
+        self.parent = None
+        self.left = left
+        self.right = right
+        self.child = None
+
+        self.priority = priority
+        self.data = data
+
+        self.degree = 0
+        self.mark = False
+
+    def __str__(self):
+
+        children = ""
+        if self.child != None:
+            current = self.child
+            children += str(current)
+            current = current.right
+            while current != self.child :
+                children += str(current)
+                current = current.right
+
+        return str(self.priority) + "[" + children + " ]"
+
+    def count_all_children(self):
+        children_count = 0
+
+        if self.child != None:
+            current = self.child
+            children_count += current.count_all_children()
+            current = current.right
+            while current != self.child :
+                children_count += current.count_all_children()
+                current = current.right
+
+        return children_count + 1
+
+
+
+
 def shortest_path(graph,source_vertex_id,target_vertex_id):
     """
     Find the shortest path from the source to the target vertex
@@ -400,105 +570,255 @@ def shortest_path(graph,source_vertex_id,target_vertex_id):
     :complexity:O(ElogV)
     """
 
+    cost_array = [-1] * (target_vertex_id + 1)
+
+
     # Create an array with all the vertices and initialize it with -2
-    vertices = [-2] * (graph.total_vertices + 1)
+    visited = [-2] * (graph.total_vertices + 1)
     # Create an array with all the vertices and initialize it with None
-    previous  = [None]* (graph.total_vertices + 1)
+    # previous  = [None]* (graph.total_vertices + 1)
 
     # Initialize the priority queue
-    fibonacci_heap = FibonacciHeap()
+    fibonacci_heap = FibonacciHeap(graph.total_vertices)
 
     # Add the source vertex with a priority of 0
-    vertices[source_vertex_id] = fibonacci_heap.insert(0,(source_vertex_id, None))
-
+    # vertices[source_vertex_id] = fibonacci_heap.insert(0,(source_vertex_id, None))
+    fibonacci_heap.insert(source_vertex_id, 0, graph.get_vertex(source_vertex_id))
 
     # Loop until the priority queue is empty
     while len(fibonacci_heap) != 0:
         # Serve from the priority queue
         # O(logV)
-        u = fibonacci_heap.extract_min()
-        # Get the reference to the vertex of the graph
-        u_vertex = graph.get_vertex(u[1][0])
+
+        # print("--------")
+        # Get the reference to the vertex of the graph and the cost
+        (u_cost, u_vertex) = fibonacci_heap.extract_min()
+        # print("Extracted Min" +str(u_cost))
+
+
+        if u_vertex.id == 465:
+            print("")
+
+        print(str(u_vertex.id) + "xx" + str(fibonacci_heap.count_node()) + "::" + str(fibonacci_heap.count) + ":" + str(fibonacci_heap))
+        # print()
+
+        # if fibonacci_heap.min != None:
+        #     if fibonacci_heap.min.priority == 7429:
+        #         print("")
+        #
+        # if u_vertex.id == 119:
+        #     print("")
+
+        # if cost_array[u_vertex.id] == -1:
+        cost_array[u_vertex.id] = u_cost
 
         # Assigning -1 to the vertex class to signify that it is visited
-        vertices[u[1][0]] = -1
-
-        # Storing the vertex id of the previous vertex for backtracking
-        previous[u[1][0]] = u[1][1]
-
-        # Check if the id of the served vertex is the target id
-        if u[1][0] == target_vertex_id:
-            # if so set the current vertex as the target vertex
-            current = target_vertex_id
-            # Create a list to hold the path to the vertex
-            reversed_path = [target_vertex_id]
-            # Until the source_vertex is found, loop through the previous array
-            # O(V)
-            while current != source_vertex_id:
-                # Add the vertex to the path array
-                reversed_path.append(previous[current])
-                # Set the new current as the next previous
-                current = previous[current]
-
-            # O(V)
-            path = [0] * len(reversed_path)
-
-            # O(V)
-            index = len(reversed_path)-1
-            for item in reversed_path:
-                path[index] = item
-                index -= 1
-
-            return path,u[0]
+        visited[u_vertex.id] = -1
 
         # Go through each edge of the vertex
         # O(V)
         for edge in u_vertex.edges:
+
+            if u_vertex.id == 465:
+                print("")
+
+
             # If the vertex is already visited
-            if vertices[edge.edgeTo] == -1:
+            if visited[graph.get_vertex(edge.edgeTo).id] == -1:
                 pass
             else:
+                next_vertex = graph.get_vertex(edge.edgeTo)
+
                 # O(logV)
-                if vertices[edge.edgeTo] == -2:
+                if fibonacci_heap.look_up[next_vertex.id] == -2:
                     # O(logV)
-                    fibonacci_heap.insert(u[0] + edge.edgeWeight, (edge.edgeTo, u[1][0]))
+                    # print("Inserted Node" + str(u_cost + edge.edgeWeight))
+                    # if u_cost + edge.edgeWeight == 7427:
+                    #     print("")
+
+                    if next_vertex.id == 465:
+                        print("")
+                    fibonacci_heap.insert(next_vertex.id, u_cost + edge.edgeWeight, next_vertex)
 
                 else:
-                    v_distance = vertices[edge.edgeTo][0]
-                    if v_distance > u[0]+edge.edgeWeight:
+                    v_distance = fibonacci_heap.look_up[next_vertex.id].priority
+                    if v_distance > u_cost + edge.edgeWeight:
                         # Relaxing the vertex
                         # O(logV)
-                        fibonacci_heap.decrease_key(edge.edgeTo,u[0]+edge.edgeWeight,u[1][0])
+                        # if v_distance == 4385:
+                        #     print("")
+                        # print("Decresed Key" + str(v_distance) + "->" + str(u_cost + edge.edgeWeight))
 
+                        # if u_cost + edge.edgeWeight == 7427:
+                        #     print("")
+
+                        if next_vertex.id == 465:
+                            print("")
+
+                        fibonacci_heap.decrease_key(next_vertex.id, u_cost + edge.edgeWeight)
+
+
+    print(fibonacci_heap.look_up[5769])
     # If there are no vertices
-    return [],0
+    return cost_array
+
+def write_output(output, output_path):
+    """
+    This method is used to write the string to the file
+    :param output: the output string
+    :param output_path: the path to the output file
+    :return: None
+    """
+    output_file = open(output_path, "w")
+    output_file.write(output)
+
+
+def read_input():
+    """
+    method used to read the arguments from the command line and read the text and pattern files
+    :return: the arguments
+    """
+
+    # create a parser object
+    parser = ap.ArgumentParser()
+
+    # specify what arguments will be coming from the terminal/commandline
+    parser.add_argument("graph_file", help="specifies the name of the graph file", type=str)
+
+    # Get all the arguments
+    arguments = parser.parse_args()
+
+    # Get the filepath arguments
+    graph_file_path = arguments.graph_file
+
+    return graph_file_path
+
+def test(test_file_path, actual_result_path):
+
+    # Open the file
+    test_file = open(test_file_path)
+    actual_result_file = open(actual_result_path)
+
+    # Loop through each line to add the edge to the graph
+    # O(E)
+    test_arr = []
+    for line in test_file:
+        line = line.strip()
+        line = line.split("\t")
+        test_arr.append(line)
+
+    actual_arr = []
+    for line in actual_result_file:
+        line = line.strip()
+        line = line.split("\t")
+        actual_arr.append(line)
+
+    print(test_arr)
+    print(actual_arr)
+
+    min = [0,10000]
+
+    count = 0
+    for i in range(len(test_arr)):
+
+        if test_arr[i] != actual_arr[i]:
+            count+= 1
+            print("mismatch at " + str(i + 1) + " " + str(actual_arr[i]))
+
+            if int(actual_arr[i][1]) < int(min[1]):
+                min = actual_arr[i]
+
+            print(min)
+
+    print(count)
+
 
 if __name__ == "__main__":
 
-    graph = get_edges("test.txt")
-    path, cost = shortest_path(graph, 1, 0)
-
-    print(path)
-    print(cost)
+    # # # # Get the text and pattern from the file
+    # # # # path = read_input()
 
 
 
-    # fib = FibonacciHeap()
+
+    path = "input_dijkstra_test.txt"
+    # path = "test.txt"
+    print("Reading the file and building the graph..")
+
+    graph = get_edges(path)
+
+    source_id = 1
+
+    print("Calculating the shortest paths..")
+
+    # c = shortest_path(graph, 1, 30)
+    # print(c)
+    # exit()
+
+    # for i in range(n):
+    #     print("Calculating " + str(i + 1))
+    #     cost_array[i] = shortest_path(graph, source_id, i + 1)
+
+    cost_array = shortest_path(graph, source_id, 6105)
+
+    print(cost_array)
+
+    print("Writing to file..")
+
+
+    # Convert the output array to a string to be written to file
+    write = ""
+    for i in range(1,len(cost_array)):
+        write += str(i) + "\t" + str(cost_array[i]) + "\n"
+
+    # Write the output to file
+    write_output(write, 'output_dijkstra.txt')
+
+    print("Writing complete.")
+
+    test("output_dijkstra.txt","output_dijkstra_test.txt")
+
     #
-    # # inserting
-    # a = fib.insert(20,"a")
-    # b = fib.insert(50,"b")
-    # c = fib.insert(10,"c")
-    # d = fib.insert(100,"d")
-    # e = fib.insert(12,"e")
-    # f = fib.insert(16,"f")
+    # fib = FibonacciHeap(100)
+    # # #
+    # # #
+    #
+    # #
+    # fib.insert(1, 11, "a")
+    # fib.insert(2, 12, "b")
+    # fib.insert(3, 13, "c")
+    # fib.insert(4, 14, "d")
+    # fib.insert(5, 9, "e")
+    # fib.insert(6, 10, "f")
+    # fib.insert(7, 17, "g")
+    # fib.insert(8, 18, "h")
+    # fib.insert(9, 17, "i")
+    # fib.insert(10, 18, "j")
+    # fib.insert(11, 17, "k")
+    # fib.insert(12, 18, "l")
+    # fib.insert(13, 17, "m")
+    # fib.insert(14, 18, "n")
+    #
+    #
+    # # print(fib.extract_min())
+    # # print(fib.extract_min())
+    # print(fib.extract_min())
+    #
+    #
+    # print(fib)
+    # fib.decrease_key(4,1)
+    #
+    #
+    # # print(fib.extract_min())
+    #
+    # # print(fib.extract_min())
+    # print(fib.extract_min())
+    #
+    #
+    #
+    # fib.decrease_key(8,1)
     #
     # print(fib)
     #
-    # # Extract min
-    # fib.extract_min()
-    #
-    # fib.decrease_key(d,1)
-    # fib.decrease_key(b,2)
-    #
-    # print(fib)
+
+
