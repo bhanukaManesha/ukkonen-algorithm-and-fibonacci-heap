@@ -1,3 +1,12 @@
+########################################################################################################################
+# Name - Bhanuka Manesha Samarasekara Vitharana Gamage
+# Student ID - 28993373
+# Monash Email - bsam0002@student.monash.edu
+
+# Question 1 -  Dijkstra algorithm using Fibonacci Heap
+########################################################################################################################
+
+# Importing the libraries
 import argparse as ap
 import math
 
@@ -144,42 +153,32 @@ def get_edges(filename):
 
 
 class FibonacciHeap:
-
+    '''
+    Class to implement the fibonacci heap
+    '''
     def __init__(self, number_of_nodes):
+        '''
+        Initial the root node for the fibonacci heap
+        :param number_of_nodes: the number of unique inputs for the lookup table
+        '''
         self.min = None
         self.count = 0
 
+        # Create the look up table
         self.look_up = [-2] * (number_of_nodes + 1)
 
     def __len__(self):
+        '''
+        method to return the number of items in the heap
+        :return: total number of nodes in the heap
+        '''
         return self.count
 
     def __str__(self):
-        output = ""
-
-        # output += self.traverse(self.min)
-
-        # output += "min : " + str(self.min)
-        return self.print_root()
-
-
-    def traverse(self,root):
-        output = ""
-        start = root
-        output += str(start.priority) + " "
-        current = start.right
-        while current != start:
-            output += str(current.priority) + " [left : " + str(current.left) + " right : " + str(current.right) + "]  "
-
-            if current.child != None:
-                output += self.traverse(current.child)
-            current = current.right
-
-        return output
-
-
-    def print_root(self):
-
+        '''
+        method to print the fibonacci heap
+        :return: return the fibonacci heap as a string
+        '''
         if self.min != None:
             output = ""
             current = self.min
@@ -197,14 +196,20 @@ class FibonacciHeap:
         return ""
 
     def count_node(self):
+        '''
+        method to count the total number of nodes using traversal
+        *** this method was used for test whether the node pointers are updated correctly
+        :return:the total number of nodes in the heap
+        '''
         if self.min != None:
+
             count_node = 0
             current = self.min
-
             count_node += current.count_all_children()
 
             if current.right != current:
                 current = current.right
+
                 while current != self.min:
                     count_node += current.count_all_children()
                     current = current.right
@@ -215,142 +220,179 @@ class FibonacciHeap:
 
 
     def insert(self, id, priority, data):
+        '''
+        method to insert new items to the fibonacci heap
+        :param id: the unique id for the node, to be used for O(1) access
+        :param priority: the priority to be used for the value
+        :param data: the payload of the node
+        :return: None
+        '''
 
+        # Create a new node using the node class
         new_node = Node(priority, data, None, None)
         new_node.left = new_node
         new_node.right = new_node
 
-
+        # If the heap is empty then add the new node as the root
         if self.min == None:
             self.min = new_node
         else:
 
+            # If there are items in the node, add the new node to the left of the current min
             new_node.left = self.min.left
             self.min.left.right = new_node
             self.min.left = new_node
             new_node.right = self.min
 
+            # If the new node is smaller than the current min, update the min pointer
             if new_node.priority < self.min.priority:
                 self.min = new_node
 
-        # self.min = self.add_to_circular_list(self.min, new_node)
-
+        # Increase the count of the heap
         self.count += 1
 
-        # print("Added one" + str(self.count))
-
+        # Add the new node to the loop up table for O(1) access
         self.look_up[id] = new_node
 
     def get_min(self):
+        '''
+        Method to get the reference to the minimum node
+        :return: the pointer to the minimum node
+        '''
         return self.min
 
-    def remove_from_list(self, node):
-
-        if node.right != node and node.child == None:
-            left_sibling = node.left
-            right_sibling = node.right
-
-            left_sibling.right = right_sibling
-            right_sibling.left = left_sibling
-
-        return
 
     def extract_min(self):
+        '''
+        Method used to extract the minimum from the heap
+        :return: (priority of the node, payload of the node)
+        '''
+
         # Get reference to the minimum node
         minNode = self.min
 
+        # Check of the root is none
         if self.min != None:
 
+            # Remove the parent of each node of the roots children
             self.remove_parent(minNode.child)
 
-
-            # if self.min.priority == 1524:
-            #     print("")
-
+            # Check if there is only one element in the list
             if self.min.right != self.min and self.min.child != None:
+
+                # get the reference to the left sibling of the parent
                 parent_sibling_left = self.min.left
 
+                # get the reference of the sibling of the left child
                 child_sibling_left = self.min.child.left
 
+                # update the reference of the left sibling of the parent
                 parent_sibling_left.right = self.min.child
+
+                # update the reference of the left sibling of the child
                 self.min.child.left = parent_sibling_left
 
+                # Set the child of the min to none
                 self.min.child = None
 
+                # update the sibling of the left child to the min
                 child_sibling_left.right = self.min
+
+                # Update the left reference of the min of the parent to the sibling
                 self.min.left = child_sibling_left
 
+                # Set the degree of the parent to 0
                 self.min.degree = 0
 
+            # if there is only one root node with children
             elif self.min != None and self.min.child != None:
+
+                # add the children of the root node to the root level by updating the pointers
                 self.min.child.left.right = self.min
                 self.min.left = self.min.child.left
                 self.min.right = self.min.child
                 self.min.child.left = self.min
+
+                # Set the child of the root node to none
                 self.min.child = None
+
+                # Set the degree of the minimum to zero
                 self.min.degree = 0
 
-
-
+            # Consolidate the heap and get the reference to the next minimum element in the heap
             next_min = self.consolidate()
 
-
-            ff = self.count_node()
-
+            # After consolidating, remove the current minimum from the heap
             if self.min.right != self.min:
+                # Update the pointers
                 left_sibling = self.min.left
                 right_sibling = self.min.right
 
                 left_sibling.right = right_sibling
                 right_sibling.left = left_sibling
 
-            # self.remove_from_circular_link_list(minNode, minNode.child)
-
-            # self.remove_from_list(minNode)
-
-
+            # Check if there is only one item in the root list
             if minNode == minNode.right:
+
+                # If yes, check whether min has children
                 if minNode.child != None:
-                    # minNode = minNode.child
-                    self.min = self.min.child
+                    # If there is a child, then update the minimum to the next min
+                    self.min = next_min
                 else:
+                    # if there are no children, then the heap is empty
                     self.min = None
             else:
+                # update the minimum pointer to the next minimum
                 self.min = next_min
-
 
             # Reduce the count
             self.count -= 1
 
+        # return the minimum node priority and data
         return (minNode.priority, minNode.data)
 
-    def consolidate(self):
 
+    def consolidate(self):
+        '''
+        method used to consolidate the heap
+        :return: the reference to the next minimum node in the heap
+        '''
+
+        # Calculate the log 2 value to determine the size of array A
         log_value = int((math.log2(self.count))) + 2
+
+        # Create an array A with size of log
         A = [None] * log_value
 
-        # A[self.min.degree] = self.min
-
+        # Set the next min as the current minimum
         next_min = self.min
+
+        # if there is more than one item in the heap
         if self.min.right != self.min:
+            # update the next min to the the next item
             next_min = self.min.right
 
-
+        # if there is only one item in the list, we do not need to consolidate
         if self.min == self.min.right:
             return
 
+        # Set the pointer node to the next item in the list
         pointer_node = self.min.right
 
+        # Loop until break
         while True :
 
+            # Calculate the degree of the pointer node
             degree = pointer_node.degree
 
+            # If there is an item in the index degree of array A, the we need to merge the two sub trees
             while A[degree] != None:
 
+                # Get the reference to the other tree inside the array
                 other_node = A[degree]
 
+                # if the pointer node is the same as the other tree, break out of the loop
                 if (pointer_node == other_node):
-
                     break
 
                 if other_node.priority < pointer_node.priority:
@@ -376,13 +418,14 @@ class FibonacciHeap:
             if pointer_node == self.min:
                 break
 
-            # if pointer_node.priority < next_min.priority and pointer_node != self.min:
-            #     next_min = pointer_node
-
-
         return next_min
 
     def remove_parent(self, node):
+        '''
+        method to remove the parent reference of a given list of child nodes
+        :param node:
+        :return:
+        '''
         if node != None:
             # Remove all the links to the removed parent
             if node != None:
@@ -465,11 +508,7 @@ class FibonacciHeap:
             # Case 2a
             parent_mark = currentNode.parent.mark
 
-
-
             self.promote_to_root(currentNode)
-
-
 
             if currentNode.priority < self.min.priority:
                 self.min = currentNode
@@ -574,7 +613,7 @@ def shortest_path(graph,source_vertex_id,target_vertex_id):
 
 
     # Create an array with all the vertices and initialize it with -2
-    visited = [-2] * (graph.total_vertices + 1)
+    visited = [-2] * (target_vertex_id + 1)
     # Create an array with all the vertices and initialize it with None
     # previous  = [None]* (graph.total_vertices + 1)
 
@@ -590,24 +629,8 @@ def shortest_path(graph,source_vertex_id,target_vertex_id):
         # Serve from the priority queue
         # O(logV)
 
-        # print("--------")
         # Get the reference to the vertex of the graph and the cost
         (u_cost, u_vertex) = fibonacci_heap.extract_min()
-        # print("Extracted Min" +str(u_cost))
-
-
-        if u_vertex.id == 465:
-            print("")
-
-        print(str(u_vertex.id) + "xx" + str(fibonacci_heap.count_node()) + "::" + str(fibonacci_heap.count) + ":" + str(fibonacci_heap))
-        # print()
-
-        # if fibonacci_heap.min != None:
-        #     if fibonacci_heap.min.priority == 7429:
-        #         print("")
-        #
-        # if u_vertex.id == 119:
-        #     print("")
 
         # if cost_array[u_vertex.id] == -1:
         cost_array[u_vertex.id] = u_cost
@@ -619,10 +642,6 @@ def shortest_path(graph,source_vertex_id,target_vertex_id):
         # O(V)
         for edge in u_vertex.edges:
 
-            if u_vertex.id == 465:
-                print("")
-
-
             # If the vertex is already visited
             if visited[graph.get_vertex(edge.edgeTo).id] == -1:
                 pass
@@ -631,34 +650,16 @@ def shortest_path(graph,source_vertex_id,target_vertex_id):
 
                 # O(logV)
                 if fibonacci_heap.look_up[next_vertex.id] == -2:
-                    # O(logV)
-                    # print("Inserted Node" + str(u_cost + edge.edgeWeight))
-                    # if u_cost + edge.edgeWeight == 7427:
-                    #     print("")
 
-                    if next_vertex.id == 465:
-                        print("")
+                    # O(logV)
                     fibonacci_heap.insert(next_vertex.id, u_cost + edge.edgeWeight, next_vertex)
 
                 else:
                     v_distance = fibonacci_heap.look_up[next_vertex.id].priority
                     if v_distance > u_cost + edge.edgeWeight:
                         # Relaxing the vertex
-                        # O(logV)
-                        # if v_distance == 4385:
-                        #     print("")
-                        # print("Decresed Key" + str(v_distance) + "->" + str(u_cost + edge.edgeWeight))
-
-                        # if u_cost + edge.edgeWeight == 7427:
-                        #     print("")
-
-                        if next_vertex.id == 465:
-                            print("")
-
                         fibonacci_heap.decrease_key(next_vertex.id, u_cost + edge.edgeWeight)
 
-
-    print(fibonacci_heap.look_up[5769])
     # If there are no vertices
     return cost_array
 
@@ -713,10 +714,7 @@ def test(test_file_path, actual_result_path):
         line = line.split("\t")
         actual_arr.append(line)
 
-    print(test_arr)
-    print(actual_arr)
-
-    min = [0,10000]
+    # min = [0,10000]
 
     count = 0
     for i in range(len(test_arr)):
@@ -725,46 +723,28 @@ def test(test_file_path, actual_result_path):
             count+= 1
             print("mismatch at " + str(i + 1) + " " + str(actual_arr[i]))
 
-            if int(actual_arr[i][1]) < int(min[1]):
-                min = actual_arr[i]
+            # if int(actual_arr[i][1]) < int(min[1]):
+            #     min = actual_arr[i]
 
-            print(min)
+            # print(min)
 
     print(count)
 
 
 if __name__ == "__main__":
 
-    # # # # Get the text and pattern from the file
-    # # # # path = read_input()
+    # Get the text and pattern from the file
+    path = read_input()
 
-
-
-
-    path = "input_dijkstra_test.txt"
-    # path = "test.txt"
-    print("Reading the file and building the graph..")
+    # Uncomment to run file directly here
+    # path = "input_dijkstra_test.txt"
+    # path = "test_input.txt"
 
     graph = get_edges(path)
 
     source_id = 1
 
-    print("Calculating the shortest paths..")
-
-    # c = shortest_path(graph, 1, 30)
-    # print(c)
-    # exit()
-
-    # for i in range(n):
-    #     print("Calculating " + str(i + 1))
-    #     cost_array[i] = shortest_path(graph, source_id, i + 1)
-
-    cost_array = shortest_path(graph, source_id, 6105)
-
-    print(cost_array)
-
-    print("Writing to file..")
-
+    cost_array = shortest_path(graph, source_id, graph.total_vertices - 1)
 
     # Convert the output array to a string to be written to file
     write = ""
@@ -774,51 +754,5 @@ if __name__ == "__main__":
     # Write the output to file
     write_output(write, 'output_dijkstra.txt')
 
-    print("Writing complete.")
-
+    # Uncomment to check with the test file
     test("output_dijkstra.txt","output_dijkstra_test.txt")
-
-    #
-    # fib = FibonacciHeap(100)
-    # # #
-    # # #
-    #
-    # #
-    # fib.insert(1, 11, "a")
-    # fib.insert(2, 12, "b")
-    # fib.insert(3, 13, "c")
-    # fib.insert(4, 14, "d")
-    # fib.insert(5, 9, "e")
-    # fib.insert(6, 10, "f")
-    # fib.insert(7, 17, "g")
-    # fib.insert(8, 18, "h")
-    # fib.insert(9, 17, "i")
-    # fib.insert(10, 18, "j")
-    # fib.insert(11, 17, "k")
-    # fib.insert(12, 18, "l")
-    # fib.insert(13, 17, "m")
-    # fib.insert(14, 18, "n")
-    #
-    #
-    # # print(fib.extract_min())
-    # # print(fib.extract_min())
-    # print(fib.extract_min())
-    #
-    #
-    # print(fib)
-    # fib.decrease_key(4,1)
-    #
-    #
-    # # print(fib.extract_min())
-    #
-    # # print(fib.extract_min())
-    # print(fib.extract_min())
-    #
-    #
-    #
-    # fib.decrease_key(8,1)
-    #
-    # print(fib)
-    #
-
-
