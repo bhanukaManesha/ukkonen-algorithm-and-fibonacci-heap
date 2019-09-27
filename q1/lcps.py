@@ -191,12 +191,14 @@ def ukkonen(text):
                 else:
 
                     # Create the new node
-                    active_pointers.active_node.children[get_alphanumeric_order(text[global_i.i])] = Node(global_i.i, global_i)
+                    # active_pointers.active_node.children[get_alphanumeric_order(text[global_i.i])] = Node(global_i.i, global_i)
+                    root.children[get_alphanumeric_order(text[global_i.i])] = Node(global_i.i, global_i)
 
                     # Increase j by 1
                     j += 1
 
             else:
+
                # Get the next character after
                 next_char  = skip_count(global_i.i, text, active_pointers)
 
@@ -293,6 +295,11 @@ def ukkonen(text):
                     # Add the active pointers
                     active_pointers.active_node.children[get_alphanumeric_order(text[new_middle_node.start])] = new_middle_node
 
+                    # If there is a last created node, then update the suffix link
+                    if last_created_node != None:
+                        last_created_node.suffix_link = new_middle_node
+
+
                     # Set the new node for suffix link
                     last_created_node = new_middle_node
 
@@ -364,7 +371,7 @@ def lcps(root, index1, index2, text):
     :param index1: The start index of the first prefix
     :param index2: The start index of the second prefix
     :param text: The input string
-    :return:
+    :return: the length of the longest common prefix
     '''
 
     # Set the count to zero
@@ -468,8 +475,11 @@ if __name__ == "__main__":
     text, pairs = read_input()
 
     # Uncomment to run file directly here
-    # path = "input_dijkstra_test.txt"
-    # path = "test_input.txt"
+    # path = "string.txt"
+    # path = "input_text.txt"
+    # text_file = open(path, "r")
+    # text = text_file.readlines()
+    # text = text[0]
 
     # Pass in the text while appending the $ sign
     tree = ukkonen(text)
